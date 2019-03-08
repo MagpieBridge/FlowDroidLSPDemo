@@ -1,0 +1,9 @@
+/target/
+
+jsonoutput/
+
+\.settings/
+
+\.project
+
+\.classpath
