@@ -24,12 +24,14 @@ import com.ibm.wala.classLoader.Module;
 
 import de.upb.soot.core.SootClass;
 import de.upb.soot.frontends.java.JimpleConverter;
+import de.upb.soot.frontends.java.PositionTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
 
 import soot.AndroidPlatformException;
 import soot.Scene;
+import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowConfiguration;
 import soot.jimple.infoflow.InfoflowConfiguration.CallgraphAlgorithm;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
@@ -37,6 +39,8 @@ import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.ApkHandler;
 import soot.jimple.infoflow.android.config.SootConfigForAndroid;
+import soot.jimple.infoflow.results.DataFlowResult;
+import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
@@ -73,7 +77,7 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
     try {
       // setup flowDroid
       InfoflowAndroidConfiguration c = new InfoflowAndroidConfiguration();
-      //c.setWriteOutputFiles(true);
+      // c.setWriteOutputFiles(true);
       c.getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Fast); // turn on to compute data flow path
       c.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform);
       c.getAnalysisFileConfig().setTargetAPKFile("src/test/resources/ActivityLifecycle1/ActivityLifecycle1.apk");
@@ -101,14 +105,14 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
         }
       };
       flowDroid.setSootConfig(sootConfigForAndroid);
-      flowDroid.runInfoflow(configPath + File.separator + "SourcesAndSinks.txt");
-
-      for (soot.jimple.Stmt s : flowDroid.getCollectedSources()) {
-        System.out.println("source:" + s.toString());
-      }
-
-      for (soot.jimple.Stmt s : flowDroid.getCollectedSinks()) {
-        System.out.println("sink:" + s.toString());
+      InfoflowResults results = flowDroid.runInfoflow(configPath + File.separator + "SourcesAndSinks.txt");
+      for (DataFlowResult re : results.getResultSet()) {
+        Stmt sink = re.getSink().getStmt();
+        Stmt source = re.getSource().getStmt();
+        System.out
+            .println("sink: " + sink.toString() + "\nposition: " + ((PositionTag) sink.getTag("PositionTag")).getPosition());
+        System.out
+            .println("source: " + source.toString() + "\nposition: " + ((PositionTag) source.getTag("PositionTag")).getPosition());
       }
     } catch (IOException e) {
       e.printStackTrace();
