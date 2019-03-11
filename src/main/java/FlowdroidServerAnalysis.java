@@ -1,48 +1,35 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import org.apache.commons.io.IOUtils;
-import org.xmlpull.v1.XmlPullParserException;
-
-import pxb.android.axml.AxmlReader;
-import pxb.android.axml.AxmlVisitor;
-import pxb.android.axml.NodeVisitor;
-
 import com.ibm.wala.classLoader.Module;
 
 import de.upb.soot.core.SootClass;
 import de.upb.soot.frontends.java.JimpleConverter;
 import de.upb.soot.frontends.java.PositionTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
-import magpiebridge.core.MagpieServer;
-import magpiebridge.core.ServerAnalysis;
 
-import soot.AndroidPlatformException;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import org.xmlpull.v1.XmlPullParserException;
+
 import soot.Scene;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowConfiguration;
-import soot.jimple.infoflow.InfoflowConfiguration.CallgraphAlgorithm;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.axml.ApkHandler;
 import soot.jimple.infoflow.android.config.SootConfigForAndroid;
 import soot.jimple.infoflow.results.DataFlowResult;
 import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
+
+import magpiebridge.core.MagpieServer;
+import magpiebridge.core.ServerAnalysis;
 
 public class FlowdroidServerAnalysis implements ServerAnalysis {
 
@@ -111,8 +98,8 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
         Stmt source = re.getSource().getStmt();
         System.out
             .println("sink: " + sink.toString() + "\nposition: " + ((PositionTag) sink.getTag("PositionTag")).getPosition());
-        System.out
-            .println("source: " + source.toString() + "\nposition: " + ((PositionTag) source.getTag("PositionTag")).getPosition());
+        System.out.println(
+            "source: " + source.toString() + "\nposition: " + ((PositionTag) source.getTag("PositionTag")).getPosition());
       }
     } catch (IOException e) {
       e.printStackTrace();
