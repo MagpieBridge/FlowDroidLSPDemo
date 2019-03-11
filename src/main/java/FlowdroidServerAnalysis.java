@@ -31,6 +31,7 @@ import magpiebridge.core.ServerAnalysis;
 import soot.AndroidPlatformException;
 import soot.Scene;
 import soot.jimple.infoflow.InfoflowConfiguration;
+import soot.jimple.infoflow.InfoflowConfiguration.CallgraphAlgorithm;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
@@ -72,6 +73,8 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
     try {
       // setup flowDroid
       InfoflowAndroidConfiguration c = new InfoflowAndroidConfiguration();
+      //c.setWriteOutputFiles(true);
+      c.getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Fast); // turn on to compute data flow path
       c.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform);
       c.getAnalysisFileConfig().setTargetAPKFile("src/test/resources/ActivityLifecycle1/ActivityLifecycle1.apk");
       SetupApplication flowDroid = new SetupApplication(c);
@@ -87,9 +90,6 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
         List<SootClass> sootClasses = loader.getSootClasses();
         JimpleConverter jimpleConverter = new JimpleConverter(sootClasses);
         jimpleConverter.convertAllClasses();
-        System.out.println("LSPDEMO: " + "Wala load classes from source:" + sourceCodePath);
-        System.out.println("LSPDEMO: " + "WALA load classes from lib" + libs);
-        System.out.println("LSPDEMO: " + Scene.v().getApplicationClasses().size() + " application classes in Scene");
       };
       flowDroid.setSourceCodeConsumer(sourceCodeConsumer);
       flowDroid.setCallbackFile(configPath + File.separator + "AndroidCallbacks.txt");
@@ -97,19 +97,18 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
       SootConfigForAndroid sootConfigForAndroid = new SootConfigForAndroid() {
         @Override
         public void setSootOptions(Options options, InfoflowConfiguration config) {
-          super.setSootOptions(options, config);// explicitly exclude packages for shorter runtime
-          // turn on to compute data flow path
-          config.getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Fast);
-          options.set_keep_line_number(true);
-          options.set_print_tags_in_output(true);
-
+          options.set_exclude(Collections.emptyList());
         }
       };
       flowDroid.setSootConfig(sootConfigForAndroid);
       flowDroid.runInfoflow(configPath + File.separator + "SourcesAndSinks.txt");
 
       for (soot.jimple.Stmt s : flowDroid.getCollectedSources()) {
-        System.out.println(s.toString());
+        System.out.println("source:" + s.toString());
+      }
+
+      for (soot.jimple.Stmt s : flowDroid.getCollectedSinks()) {
+        System.out.println("sink:" + s.toString());
       }
     } catch (IOException e) {
       e.printStackTrace();

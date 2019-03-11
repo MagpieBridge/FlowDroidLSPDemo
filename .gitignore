@@ -7,3 +7,5 @@ jsonoutput/
 \.project
 
 \.classpath
+
+sootOutput/
