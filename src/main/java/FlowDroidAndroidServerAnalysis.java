@@ -1,10 +1,8 @@
 import com.ibm.wala.classLoader.Module;
-
 import de.upb.soot.core.SootClass;
 import de.upb.soot.frontends.java.JimpleConverter;
 import de.upb.soot.frontends.java.PositionTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -13,9 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-
+import magpiebridge.core.MagpieServer;
+import magpiebridge.core.ServerAnalysis;
 import org.xmlpull.v1.XmlPullParserException;
-
 import soot.Scene;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowConfiguration;
@@ -28,10 +26,7 @@ import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
-import magpiebridge.core.MagpieServer;
-import magpiebridge.core.ServerAnalysis;
-
-public class FlowdroidServerAnalysis implements ServerAnalysis {
+public class FlowDroidAndroidServerAnalysis implements ServerAnalysis {
 
   @Override
   public String source() {
@@ -65,41 +60,56 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
       // setup flowDroid
       InfoflowAndroidConfiguration c = new InfoflowAndroidConfiguration();
       // c.setWriteOutputFiles(true);
-      c.getPathConfiguration().setPathReconstructionMode(PathReconstructionMode.Fast); // turn on to compute data flow path
+      c.getPathConfiguration()
+          .setPathReconstructionMode(
+              PathReconstructionMode.Fast); // turn on to compute data flow path
       c.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform);
-      c.getAnalysisFileConfig().setTargetAPKFile("src/test/resources/ActivityLifecycle1/ActivityLifecycle1.apk");
+      c.getAnalysisFileConfig()
+          .setTargetAPKFile("src/test/resources/ActivityLifecycle1/ActivityLifecycle1.apk");
       SetupApplication flowDroid = new SetupApplication(c);
       flowDroid.setSourceCodePath(sourcePath);
       flowDroid.setLibPath(libPath);
-      String androidJar
-          = Scene.v().getAndroidJarPath(androidPlatform, "src/test/resources/ActivityLifecycle1/ActivityLifecycle1.apk");
+      String androidJar =
+          Scene.v()
+              .getAndroidJarPath(
+                  androidPlatform, "src/test/resources/ActivityLifecycle1/ActivityLifecycle1.apk");
       flowDroid.setAndroidJar(androidJar);
-      Consumer<Set<String>> sourceCodeConsumer = sourceCodePath -> {
-        HashSet<String> libs = new HashSet<>(libPath);
-        libs.add(androidJar);
-        WalaClassLoader loader = new WalaClassLoader(sourceCodePath, libs, null);
-        List<SootClass> sootClasses = loader.getSootClasses();
-        JimpleConverter jimpleConverter = new JimpleConverter(sootClasses);
-        jimpleConverter.convertAllClasses();
-      };
+      Consumer<Set<String>> sourceCodeConsumer =
+          sourceCodePath -> {
+            HashSet<String> libs = new HashSet<>(libPath);
+            libs.add(androidJar);
+            WalaClassLoader loader = new WalaClassLoader(sourceCodePath, libs, null);
+            List<SootClass> sootClasses = loader.getSootClasses();
+            JimpleConverter jimpleConverter = new JimpleConverter(sootClasses);
+            jimpleConverter.convertAllClasses();
+          };
       flowDroid.setSourceCodeConsumer(sourceCodeConsumer);
       flowDroid.setCallbackFile(configPath + File.separator + "AndroidCallbacks.txt");
-      flowDroid.setTaintWrapper(new EasyTaintWrapper(configPath + File.separator + "EasyTaintWrapperSource.txt"));
-      SootConfigForAndroid sootConfigForAndroid = new SootConfigForAndroid() {
-        @Override
-        public void setSootOptions(Options options, InfoflowConfiguration config) {
-          options.set_exclude(Collections.emptyList());
-        }
-      };
+      flowDroid.setTaintWrapper(
+          new EasyTaintWrapper(configPath + File.separator + "EasyTaintWrapperSource.txt"));
+      SootConfigForAndroid sootConfigForAndroid =
+          new SootConfigForAndroid() {
+            @Override
+            public void setSootOptions(Options options, InfoflowConfiguration config) {
+              options.set_exclude(Collections.emptyList());
+            }
+          };
       flowDroid.setSootConfig(sootConfigForAndroid);
-      InfoflowResults results = flowDroid.runInfoflow(configPath + File.separator + "SourcesAndSinks.txt");
+      InfoflowResults results =
+          flowDroid.runInfoflow(configPath + File.separator + "SourcesAndSinks.txt");
       for (DataFlowResult re : results.getResultSet()) {
         Stmt sink = re.getSink().getStmt();
         Stmt source = re.getSource().getStmt();
-        System.out
-            .println("sink: " + sink.toString() + "\nposition: " + ((PositionTag) sink.getTag("PositionTag")).getPosition());
         System.out.println(
-            "source: " + source.toString() + "\nposition: " + ((PositionTag) source.getTag("PositionTag")).getPosition());
+            "sink: "
+                + sink.toString()
+                + "\nposition: "
+                + ((PositionTag) sink.getTag("PositionTag")).getPosition());
+        System.out.println(
+            "source: "
+                + source.toString()
+                + "\nposition: "
+                + ((PositionTag) source.getTag("PositionTag")).getPosition());
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -107,5 +117,4 @@ public class FlowdroidServerAnalysis implements ServerAnalysis {
       e.printStackTrace();
     }
   }
-
 }
