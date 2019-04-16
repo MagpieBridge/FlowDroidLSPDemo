@@ -1,12 +1,19 @@
+import akka.event.jul.Logger;
+
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.util.collections.Pair;
+
 import de.upb.soot.core.SootClass;
 import de.upb.soot.frontends.java.JimpleConverter;
 import de.upb.soot.frontends.java.PositionInfoTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
 import de.upb.soot.jimple.basic.PositionInfo;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,15 +24,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import magpiebridge.core.AnalysisResult;
-import magpiebridge.core.IProjectService;
-import magpiebridge.core.JavaProjectService;
-import magpiebridge.core.Kind;
-import magpiebridge.core.MagpieServer;
-import magpiebridge.core.ServerAnalysis;
+
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.slf4j.LoggerFactory;
+
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.data.parsers.PermissionMethodParser;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
@@ -33,7 +38,15 @@ import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
 import soot.jimple.infoflow.sourcesSinks.definitions.ISourceSinkDefinitionProvider;
 import soot.jimple.infoflow.sourcesSinks.definitions.SourceSinkDefinition;
+import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.util.MultiMap;
+
+import magpiebridge.core.AnalysisResult;
+import magpiebridge.core.IProjectService;
+import magpiebridge.core.JavaProjectService;
+import magpiebridge.core.Kind;
+import magpiebridge.core.MagpieServer;
+import magpiebridge.core.ServerAnalysis;
 
 public class FlowDroidServerAnalysis implements ServerAnalysis {
 
@@ -44,13 +57,41 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private Set<String> srcPath;
   private Set<String> libPath;
   private String configPath;
+  private EasyTaintWrapper easyWrapper;
 
   public FlowDroidServerAnalysis(String configPath) {
     this.configPath = configPath;
     loadSourceAndSinks();
+    loadEntryPoints();
+    try {
+      easyWrapper =
+          new EasyTaintWrapper(
+              new File(configPath + File.separator + "EasyTaintWrapperSource.txt"));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void loadEntryPoints() {
     entryPoints = new ArrayList<>();
-    entryPoints.add(
-        "<Demo: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
+    String entryPointsFile = configPath + File.separator + "EntryPoints.txt";
+    String regex = "^<(.+):\\s*(.+)\\s+(.+)\\s*\\((.*)\\)>";
+    FileReader fr = null;
+    BufferedReader br = null;
+    try {
+      fr = new FileReader(entryPointsFile);
+      String line;
+      br = new BufferedReader(fr);
+      while ((line = br.readLine()) != null) {
+        if (line.matches(regex)) {
+          entryPoints.add(line);
+        }
+      }
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
     entryPointCreator = new DefaultEntryPointCreator(entryPoints);
   }
 
@@ -68,7 +109,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
         sinks.add(sink.toString());
       }
     } catch (IOException e) {
-
       e.printStackTrace();
     }
   }
@@ -116,10 +156,13 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   }
 
   public Collection<AnalysisResult> analyze(Set<String> srcPath, Set<String> libPath) {
-    System.err.println(srcPath);
-    System.err.println(libPath);
     Infoflow infoflow = new Infoflow();
     infoflow.getConfig().setInspectSinks(false);
+    infoflow
+        .getConfig()
+        .getPathConfiguration()
+        .setPathReconstructionMode(PathReconstructionMode.Fast);
+    infoflow.setTaintWrapper(easyWrapper);
     infoflow.setSourceCodePath(srcPath);
     Consumer<Set<String>> sourceCodeConsumer =
         sp -> {
@@ -133,11 +176,12 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     Collection<AnalysisResult> results = new HashSet<>();
     MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
     if (res != null) {
-      infoflow.getResults().printResults();
+      //infoflow.getResults().printResults();
       for (ResultSinkInfo sink : res.keySet()) {
         PositionInfo positionInfo =
             ((PositionInfoTag) sink.getStmt().getTag("PositionInfoTag")).getPositionInfo();
         for (ResultSourceInfo source : res.get(sink)) {
+
           PositionInfo sourcePos =
               ((PositionInfoTag) source.getStmt().getTag("PositionInfoTag")).getPositionInfo();
           String msg =
@@ -145,7 +189,9 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                   "Found a sensitive flow to sink %s from the source %s",
                   sink.getStmt().toString(), source.getStmt().toString());
           List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
-          if (sourcePos != null) relatedInfo.add(Pair.make(sourcePos.getStmtPosition(), "source"));
+          if (sourcePos != null) {
+            relatedInfo.add(Pair.make(sourcePos.getStmtPosition(), "source"));
+          }
           FlowDroidResult r =
               new FlowDroidResult(
                   Kind.Diagnostic,
@@ -155,7 +201,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                   DiagnosticSeverity.Error,
                   null);
           results.add(r);
-          System.out.println(r);
         }
       }
     }
@@ -164,13 +209,15 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
   private List<Pair<Position, String>> getRelated(Stmt[] path) {
     List<Pair<Position, String>> related = new ArrayList<>();
-    if (path == null) return related;
+    if (path == null) {
+      return related;
+    }
     for (Stmt s : path) {
       PositionInfoTag tag = (PositionInfoTag) s.getTag("PositionInfoTag");
       if (tag != null) {
         // just add stmt positions on the data flow path to related for now
         Position stmtPos = tag.getPositionInfo().getStmtPosition();
-        related.add(Pair.make(stmtPos, ""));
+        related.add(Pair.make(stmtPos, "on data-flow path"));
       }
     }
     return related;

@@ -1,8 +1,10 @@
 import com.ibm.wala.classLoader.Module;
+
 import de.upb.soot.core.SootClass;
 import de.upb.soot.frontends.java.JimpleConverter;
 import de.upb.soot.frontends.java.PositionTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -11,9 +13,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import magpiebridge.core.MagpieServer;
-import magpiebridge.core.ServerAnalysis;
+
 import org.xmlpull.v1.XmlPullParserException;
+
 import soot.Scene;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowConfiguration;
@@ -25,6 +27,9 @@ import soot.jimple.infoflow.results.DataFlowResult;
 import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
+
+import magpiebridge.core.MagpieServer;
+import magpiebridge.core.ServerAnalysis;
 
 public class FlowDroidAndroidServerAnalysis implements ServerAnalysis {
 

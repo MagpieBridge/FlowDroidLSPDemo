@@ -1,8 +1,10 @@
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.util.collections.Pair;
+
+import org.eclipse.lsp4j.DiagnosticSeverity;
+
 import magpiebridge.core.AnalysisResult;
 import magpiebridge.core.Kind;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 
 public class FlowDroidResult implements AnalysisResult {
   private final Kind kind;
