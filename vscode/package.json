@@ -1,0 +1,57 @@
+{
+	"name": "flowdroid-lsp-demo",
+	"description": "A language server example for FlowDroid",
+	"author": "Linghui Luo ",
+	"license": "EPL-2.0",
+	"version": "0.0.1",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/MagpieBridge/FlowDroidLSPDemo.git"
+	},
+	"publisher": "linghui-luo",
+	"categories": [],
+	"keywords": [
+		"multi-root ready"
+	],
+	"engines": {
+		"vscode": "^1.30.0"
+	},
+	"activationEvents": [
+		"onLanguage:java"
+	],
+	"main": "./out/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "FlowDroid LSP Demo",
+			"properties": {
+				"crypto-lsp-demo.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "cp ../target/flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar  flowdroid-lsp-demo.jar && cp -r ../config config && npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^5.2.1"
+	},
+	"devDependencies": {
+		"vscode": "^1.1.33",
+		"@types/mocha": "^5.2.6",
+		"@types/node": "^11.13.0",
+		"tslint": "^5.15.0",
+		"typescript": "^3.4.2"
+	}
+}
