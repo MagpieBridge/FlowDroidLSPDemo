@@ -1,15 +1,12 @@
-import akka.event.jul.Logger;
 
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.util.collections.Pair;
-
 import de.upb.soot.core.SootClass;
 import de.upb.soot.frontends.java.JimpleConverter;
 import de.upb.soot.frontends.java.PositionInfoTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
 import de.upb.soot.jimple.basic.PositionInfo;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,10 +21,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-
+import magpiebridge.core.AnalysisResult;
+import magpiebridge.core.IProjectService;
+import magpiebridge.core.JavaProjectService;
+import magpiebridge.core.Kind;
+import magpiebridge.core.MagpieServer;
+import magpiebridge.core.ServerAnalysis;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.slf4j.LoggerFactory;
-
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
@@ -40,13 +40,6 @@ import soot.jimple.infoflow.sourcesSinks.definitions.ISourceSinkDefinitionProvid
 import soot.jimple.infoflow.sourcesSinks.definitions.SourceSinkDefinition;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.util.MultiMap;
-
-import magpiebridge.core.AnalysisResult;
-import magpiebridge.core.IProjectService;
-import magpiebridge.core.JavaProjectService;
-import magpiebridge.core.Kind;
-import magpiebridge.core.MagpieServer;
-import magpiebridge.core.ServerAnalysis;
 
 public class FlowDroidServerAnalysis implements ServerAnalysis {
 
@@ -176,7 +169,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     Collection<AnalysisResult> results = new HashSet<>();
     MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
     if (res != null) {
-      //infoflow.getResults().printResults();
+      // infoflow.getResults().printResults();
       for (ResultSinkInfo sink : res.keySet()) {
         PositionInfo positionInfo =
             ((PositionInfoTag) sink.getStmt().getTag("PositionInfoTag")).getPositionInfo();

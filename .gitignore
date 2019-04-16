@@ -9,3 +9,10 @@ jsonoutput/
 \.classpath
 
 sootOutput/
+vscode/node_modules/
+vscode/config/
+vscode/flowdroid-lsp-demo\.jar
+
+vscode/out/
+
+vscode/flowdroid-lsp-demo-0\.0\.1\.vsix
