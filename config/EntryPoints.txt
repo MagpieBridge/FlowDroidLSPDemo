@@ -1,1 +1,2 @@
-<Demo: void main(java.lang.String[])>
+<magpiebridge.onlineshop.api.ShopController: java.lang.String doRegistration(javax.servlet.http.HttpServletRequest,org.springframework.ui.Model)>
+<magpiebridge.onlineshop.OnlineshopApplication: void main(java.lang.String[])>

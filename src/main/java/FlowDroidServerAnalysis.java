@@ -1,4 +1,3 @@
-
 import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.util.collections.Pair;
@@ -76,8 +75,13 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
       String line;
       br = new BufferedReader(fr);
       while ((line = br.readLine()) != null) {
+        line = line.trim();
         if (line.matches(regex)) {
           entryPoints.add(line);
+        }
+        else
+        {
+          System.err.println(line+" doesn't match regex: " + regex);
         }
       }
     } catch (FileNotFoundException e) {
@@ -149,6 +153,9 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   }
 
   public Collection<AnalysisResult> analyze(Set<String> srcPath, Set<String> libPath) {
+    System.err.println("entryPoints: " + entryPoints);
+    System.err.println("srcPath: " + srcPath);
+    System.err.println("libPath: " + libPath);
     Infoflow infoflow = new Infoflow();
     infoflow.getConfig().setInspectSinks(false);
     infoflow
