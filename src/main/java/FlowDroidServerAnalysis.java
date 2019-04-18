@@ -79,10 +79,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
         if (line.matches(regex)) {
           entryPoints.add(line);
         }
-        else
-        {
-          System.err.println(line+" doesn't match regex: " + regex);
-        }
       }
     } catch (FileNotFoundException e) {
       e.printStackTrace();
@@ -176,7 +172,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     Collection<AnalysisResult> results = new HashSet<>();
     MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
     if (res != null) {
-      // infoflow.getResults().printResults();
+      infoflow.getResults().printResults();
       for (ResultSinkInfo sink : res.keySet()) {
         PositionInfo positionInfo =
             ((PositionInfoTag) sink.getStmt().getTag("PositionInfoTag")).getPositionInfo();
@@ -187,10 +183,13 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           String msg =
               String.format(
                   "Found a sensitive flow to sink %s from the source %s",
-                  sink.getStmt().toString(), source.getStmt().toString());
+                  sink.getDefinition().toString(), source.getDefinition().toString());
           List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
           if (sourcePos != null) {
-            relatedInfo.add(Pair.make(sourcePos.getStmtPosition(), "source"));
+            relatedInfo.add(
+                Pair.make(
+                    sourcePos.getStmtPosition(),
+                    "source: <" + source.getStmt().toString().split("<")[1]));
           }
           FlowDroidResult r =
               new FlowDroidResult(

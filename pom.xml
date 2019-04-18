@@ -34,11 +34,17 @@
 			<artifactId>magpiebridge</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		<!-- specify soot version -->
+		<dependency>
+		 	<groupId>ca.mcgill.sable</groupId>
+   			 <artifactId>soot</artifactId>
+    		<version>3.2.0</version>
+    	</dependency>
 		<!-- soot-reloaded -->
 		<dependency>
 			<groupId>de.upb</groupId>
 			<artifactId>Soot</artifactId>
-			<version>4.0.0-SNAPSHOT</version>
+			<version>4.0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>de.tud.sse</groupId>
@@ -49,12 +55,6 @@
 			<groupId>de.tud.sse</groupId>
 			<artifactId>soot-infoflow-android</artifactId>
 			<version>2.7.1</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.json/json -->
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20180813</version>
 		</dependency>
 		<!--eclipse runtime and jdt used by wala -->
 		<dependency>

@@ -1,0 +1,6 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Apr 18 23:32:05 CEST 2019
+soot-infoflow-android-2.7.1-javadoc.jar>=
+soot-infoflow-android-2.7.1.jar>=
+soot-infoflow-android-2.7.1-sources.jar>=
+soot-infoflow-android-2.7.1.pom>=

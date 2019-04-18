@@ -1,0 +1,7 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Apr 18 23:18:40 CEST 2019
+@default-soot-snapshot-https\://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/.lastUpdated=1555622319386
+https\://repo.maven.apache.org/maven2/.lastUpdated=1555622320927
+https\://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/.error=Could not transfer artifact ca.mcgill.sable\:soot\:jar\:sources\:3.2.0 from/to soot-snapshot (https\://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/)\: Failed to transfer https\://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/ca/mcgill/sable/soot/3.2.0/soot-3.2.0-sources.jar. Error code 400, Repository version policy\: SNAPSHOT does not allow version\: 3.2.0
+https\://soot-build.cs.uni-paderborn.de/nexus/repository/wala/.lastUpdated=1555622319157
+https\://soot-build.cs.uni-paderborn.de/nexus/repository/wala/.error=
