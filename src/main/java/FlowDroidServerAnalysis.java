@@ -19,13 +19,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
+
 import magpiebridge.core.AnalysisResult;
 import magpiebridge.core.IProjectService;
-import magpiebridge.core.JavaProjectService;
 import magpiebridge.core.Kind;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
+import magpiebridge.projectservice.java.JavaProjectService;
+
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
@@ -42,6 +48,8 @@ import soot.util.MultiMap;
 
 public class FlowDroidServerAnalysis implements ServerAnalysis {
 
+  private static final Logger LOG = Logger.getLogger("main");
+  
   private List<String> sources;
   private List<String> sinks;
   private List<String> entryPoints;
@@ -50,9 +58,12 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private Set<String> libPath;
   private String configPath;
   private EasyTaintWrapper easyWrapper;
+  private ExecutorService exeService;
+  private Future<?> last;
 
   public FlowDroidServerAnalysis(String configPath) {
     this.configPath = configPath;
+    exeService = Executors.newSingleThreadExecutor();
     loadSourceAndSinks();
     loadEntryPoints();
     try {
@@ -140,18 +151,28 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
   @Override
   public void analyze(Collection<Module> files, MagpieServer server) {
-    setClassPath(server);
-    Collection<AnalysisResult> results = Collections.emptyList();
-    if (srcPath != null) {
-      results = analyze(srcPath, libPath);
+    if (last == null || last.isDone()) {
+      Future<?> future = exeService.submit(new Runnable() {
+        @Override
+        public void run() {
+          setClassPath(server);
+          Collection<AnalysisResult> results = Collections.emptyList();
+          if (srcPath != null) {
+            results = analyze(srcPath, libPath);
+          }
+          server.consume(results, source());
+        }
+      });
+      last = future;
+    }else {
+      LOG.info("Time between saving files is too short to trigger analysis");
     }
-    server.consume(results, source());
   }
 
   public Collection<AnalysisResult> analyze(Set<String> srcPath, Set<String> libPath) {
-    System.err.println("entryPoints: " + entryPoints);
-    System.err.println("srcPath: " + srcPath);
-    System.err.println("libPath: " + libPath);
+    LOG.info("entryPoints: " + entryPoints);
+    LOG.info("srcPath: " + srcPath);
+    LOG.info("libPath: " + libPath);
     Infoflow infoflow = new Infoflow();
     infoflow.getConfig().setInspectSinks(false);
     infoflow
