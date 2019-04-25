@@ -25,7 +25,7 @@
 			"type": "object",
 			"title": "FlowDroid LSP Demo",
 			"properties": {
-				"crypto-lsp-demo.trace.server": {
+				"flowdroid-lsp-demo.trace.server": {
 					"scope": "window",
 					"type": "string",
 					"enum": [

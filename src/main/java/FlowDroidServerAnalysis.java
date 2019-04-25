@@ -24,14 +24,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-
 import magpiebridge.core.AnalysisResult;
 import magpiebridge.core.IProjectService;
 import magpiebridge.core.Kind;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
 import magpiebridge.projectservice.java.JavaProjectService;
-
+import magpiebridge.util.SourceCodeReader;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
@@ -49,7 +48,7 @@ import soot.util.MultiMap;
 public class FlowDroidServerAnalysis implements ServerAnalysis {
 
   private static final Logger LOG = Logger.getLogger("main");
-  
+
   private List<String> sources;
   private List<String> sinks;
   private List<String> entryPoints;
@@ -152,19 +151,21 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   @Override
   public void analyze(Collection<Module> files, MagpieServer server) {
     if (last == null || last.isDone()) {
-      Future<?> future = exeService.submit(new Runnable() {
-        @Override
-        public void run() {
-          setClassPath(server);
-          Collection<AnalysisResult> results = Collections.emptyList();
-          if (srcPath != null) {
-            results = analyze(srcPath, libPath);
-          }
-          server.consume(results, source());
-        }
-      });
+      Future<?> future =
+          exeService.submit(
+              new Runnable() {
+                @Override
+                public void run() {
+                  setClassPath(server);
+                  Collection<AnalysisResult> results = Collections.emptyList();
+                  if (srcPath != null) {
+                    results = analyze(srcPath, libPath);
+                  }
+                  server.consume(results, source());
+                }
+              });
       last = future;
-    }else {
+    } else {
       LOG.info("Time between saving files is too short to trigger analysis");
     }
   }
@@ -201,33 +202,33 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
           PositionInfo sourcePos =
               ((PositionInfoTag) source.getStmt().getTag("PositionInfoTag")).getPositionInfo();
-          String msg =
-              String.format(
-                  "Found a sensitive flow to sink %s from the source %s",
-                  sink.getDefinition().toString(), source.getDefinition().toString());
-          List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
-          if (sourcePos != null) {
-            relatedInfo.add(
-                Pair.make(
-                    sourcePos.getStmtPosition(),
-                    "source: <" + source.getStmt().toString().split("<")[1]));
+          try {
+            String msg =
+                String.format(
+                    "Found a sensitive flow to sink [%s] from the source [%s]",
+                    SourceCodeReader.getLinesInString(positionInfo.getStmtPosition()).split(";")[0],
+                    SourceCodeReader.getLinesInString(sourcePos.getStmtPosition()).split(";")[0]);
+
+            List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
+            FlowDroidResult r =
+                new FlowDroidResult(
+                    Kind.Diagnostic,
+                    positionInfo.getStmtPosition(),
+                    msg,
+                    relatedInfo,
+                    DiagnosticSeverity.Error,
+                    null);
+            results.add(r);
+          } catch (Exception e) {
+            e.printStackTrace();
           }
-          FlowDroidResult r =
-              new FlowDroidResult(
-                  Kind.Diagnostic,
-                  positionInfo.getStmtPosition(),
-                  msg,
-                  relatedInfo,
-                  DiagnosticSeverity.Error,
-                  null);
-          results.add(r);
         }
       }
     }
     return results;
   }
 
-  private List<Pair<Position, String>> getRelated(Stmt[] path) {
+  private List<Pair<Position, String>> getRelated(Stmt[] path) throws Exception {
     List<Pair<Position, String>> related = new ArrayList<>();
     if (path == null) {
       return related;
@@ -237,7 +238,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
       if (tag != null) {
         // just add stmt positions on the data flow path to related for now
         Position stmtPos = tag.getPositionInfo().getStmtPosition();
-        related.add(Pair.make(stmtPos, "on data-flow path"));
+        String code = SourceCodeReader.getLinesInString(stmtPos).split(";")[0] + ";";
+        related.add(Pair.make(stmtPos, code));
       }
     }
     return related;
