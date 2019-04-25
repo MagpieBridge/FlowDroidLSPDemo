@@ -7,7 +7,7 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-lan
 
 export function activate(context: ExtensionContext) {
     let script = 'java';
-    let args = ['-jar',context.asAbsolutePath(path.join('flowdroid-lsp-demo.jar')),"-c", context.asAbsolutePath('./config')];
+    let args = [ '-Xss1g', '-Xms1g', '-Xmx4g','-jar',context.asAbsolutePath(path.join('flowdroid-lsp-demo.jar')),"-c", context.asAbsolutePath('./config')];
     let serverOptions: ServerOptions = {
         run : { command: script, args: args },
         debug: { command: script, args: args} //, options: { env: createDebugEnv() }
