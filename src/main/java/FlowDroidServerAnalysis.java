@@ -203,11 +203,20 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           PositionInfo sourcePos =
               ((PositionInfoTag) source.getStmt().getTag("PositionInfoTag")).getPositionInfo();
           try {
+            String sinkCode =
+                SourceCodeReader.getLinesInString(positionInfo.getStmtPosition()).split(";")[0];
+            String sourceCode =
+                SourceCodeReader.getLinesInString(sourcePos.getStmtPosition()).split(";")[0];
+            if (sinkCode.isEmpty()) {
+              sinkCode = sink.getDefinition().toString();
+            }
+            if (sourceCode.isEmpty()) {
+              sourceCode = source.getDefinition().toString();
+            }
             String msg =
                 String.format(
                     "Found a sensitive flow to sink [%s] from the source [%s]",
-                    SourceCodeReader.getLinesInString(positionInfo.getStmtPosition()).split(";")[0],
-                    SourceCodeReader.getLinesInString(sourcePos.getStmtPosition()).split(";")[0]);
+                    sinkCode, sourceCode);
 
             List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
             FlowDroidResult r =
