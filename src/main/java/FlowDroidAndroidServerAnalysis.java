@@ -1,7 +1,5 @@
 import com.ibm.wala.classLoader.Module;
 import de.upb.soot.core.SootClass;
-import de.upb.soot.frontends.java.JimpleConverter;
-import de.upb.soot.frontends.java.PositionTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import magpiebridge.converter.JimpleConverter;
+import magpiebridge.converter.PositionTag;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
 import org.xmlpull.v1.XmlPullParserException;

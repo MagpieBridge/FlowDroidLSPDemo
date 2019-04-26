@@ -3,11 +3,11 @@ set sootRepo=E:\Git\Github\magpie\soot-reloaded
 set magpieRepo=E:\Git\Github\magpie\MagpieBridge
 set flowdroidRepo=E:\Git\Github\magpie\flowdroid-lsp-demo
 
-echo build soot-reloaded
-set "cmdf2=mvn -f %sootRepo% com.coveo:fmt-maven-plugin:format"
-call %cmdf2%
-set "cmd1=mvn -f %sootRepo% install -DskipTests"
-call %cmd1%
+rem echo build soot-reloaded
+rem set "cmdf2=mvn -f %sootRepo% com.coveo:fmt-maven-plugin:format"
+rem call %cmdf2%
+rem set "cmd1=mvn -f %sootRepo% install -DskipTests"
+rem call %cmd1%
 
 echo build magpieBridge
 set "cmdf2=mvn -f %magpieRepo% com.coveo:fmt-maven-plugin:format"

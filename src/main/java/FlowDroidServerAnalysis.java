@@ -2,8 +2,6 @@ import com.ibm.wala.cast.tree.CAstSourcePositionMap.Position;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.util.collections.Pair;
 import de.upb.soot.core.SootClass;
-import de.upb.soot.frontends.java.JimpleConverter;
-import de.upb.soot.frontends.java.PositionInfoTag;
 import de.upb.soot.frontends.java.WalaClassLoader;
 import de.upb.soot.jimple.basic.PositionInfo;
 import java.io.BufferedReader;
@@ -24,6 +22,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import magpiebridge.converter.JimpleConverter;
+import magpiebridge.converter.PositionInfoTag;
 import magpiebridge.core.AnalysisResult;
 import magpiebridge.core.IProjectService;
 import magpiebridge.core.Kind;
@@ -203,10 +203,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           PositionInfo sourcePos =
               ((PositionInfoTag) source.getStmt().getTag("PositionInfoTag")).getPositionInfo();
           try {
-            String sinkCode =
-                SourceCodeReader.getLinesInString(positionInfo.getStmtPosition()).split(";")[0];
-            String sourceCode =
-                SourceCodeReader.getLinesInString(sourcePos.getStmtPosition()).split(";")[0];
+            String sinkCode = SourceCodeReader.getLinesInString(positionInfo.getStmtPosition());
+            String sourceCode = SourceCodeReader.getLinesInString(sourcePos.getStmtPosition());
             if (sinkCode.isEmpty()) {
               sinkCode = sink.getDefinition().toString();
             }

@@ -15,15 +15,12 @@ public class Demo {
   
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String s1 = req.getParameter("name");
-
+   
     String s2 = doStuff(s1);
     String s3 = doStuff("random");
-    
- 
-
 
     PrintWriter writer = resp.getWriter();  
-    
+        
     writer.println(s2);                    /* BAD */
     writer.println(s3);
   }

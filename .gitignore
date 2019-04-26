@@ -18,3 +18,5 @@ vscode/out/
 vscode/flowdroid-lsp-demo-0\.0\.1\.vsix
 
 vscode/package-lock\.json
+
+dependency-reduced-pom\.xml
