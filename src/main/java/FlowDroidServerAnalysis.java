@@ -150,7 +150,10 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
   @Override
   public void analyze(Collection<Module> files, MagpieServer server) {
-    if (last == null || last.isDone()) {
+    if (last != null && !last.isDone()) {
+      last.cancel(false);
+      if (last.isCancelled()) LOG.info("Susscessfully cancelled last analysis and start new");
+    }
       Future<?> future =
           exeService.submit(
               new Runnable() {
@@ -165,9 +168,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                 }
               });
       last = future;
-    } else {
-      LOG.info("Time between saving files is too short to trigger analysis");
-    }
   }
 
   public Collection<AnalysisResult> analyze(Set<String> srcPath, Set<String> libPath) {
