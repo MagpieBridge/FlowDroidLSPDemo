@@ -70,7 +70,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           new EasyTaintWrapper(
               new File(configPath + File.separator + "EasyTaintWrapperSource.txt"));
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -91,9 +91,9 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
         }
       }
     } catch (FileNotFoundException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
     entryPointCreator = new DefaultEntryPointCreator(entryPoints);
   }
@@ -112,7 +112,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
         sinks.add(sink.toString());
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -154,20 +154,20 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
       last.cancel(false);
       if (last.isCancelled()) LOG.info("Susscessfully cancelled last analysis and start new");
     }
-      Future<?> future =
-          exeService.submit(
-              new Runnable() {
-                @Override
-                public void run() {
-                  setClassPath(server);
-                  Collection<AnalysisResult> results = Collections.emptyList();
-                  if (srcPath != null) {
-                    results = analyze(srcPath, libPath);
-                  }
-                  server.consume(results, source());
+    Future<?> future =
+        exeService.submit(
+            new Runnable() {
+              @Override
+              public void run() {
+                setClassPath(server);
+                Collection<AnalysisResult> results = Collections.emptyList();
+                if (srcPath != null) {
+                  results = analyze(srcPath, libPath);
                 }
-              });
-      last = future;
+                server.consume(results, source());
+              }
+            });
+    last = future;
   }
 
   public Collection<AnalysisResult> analyze(Set<String> srcPath, Set<String> libPath) {
@@ -216,7 +216,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                     "Found a sensitive flow to sink [%s] from the source [%s]",
                     sinkCode, sourceCode);
 
-            List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
+            // List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
+            List<Pair<Position, String>> relatedInfo = new ArrayList<>();
             FlowDroidResult r =
                 new FlowDroidResult(
                     Kind.Diagnostic,
@@ -227,7 +228,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                     null);
             results.add(r);
           } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
           }
         }
       }
