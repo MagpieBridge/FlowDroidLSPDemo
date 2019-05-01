@@ -34,6 +34,7 @@ import magpiebridge.util.SourceCodeReader;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.InfoflowConfiguration.CallgraphAlgorithm;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.data.parsers.PermissionMethodParser;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
@@ -59,6 +60,9 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private EasyTaintWrapper easyWrapper;
   private ExecutorService exeService;
   private Future<?> last;
+
+  private boolean showRelated = true;
+  private boolean debug = true;
 
   public FlowDroidServerAnalysis(String configPath) {
     this.configPath = configPath;
@@ -175,11 +179,16 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     LOG.info("srcPath: " + srcPath);
     LOG.info("libPath: " + libPath);
     Infoflow infoflow = new Infoflow();
+    infoflow.getConfig().setInspectSources(false);
     infoflow.getConfig().setInspectSinks(false);
-    infoflow
-        .getConfig()
-        .getPathConfiguration()
-        .setPathReconstructionMode(PathReconstructionMode.Fast);
+    infoflow.getConfig().setLogSourcesAndSinks(true);
+    infoflow.getConfig().setWriteOutputFiles(debug);
+    if (showRelated) {
+      infoflow
+          .getConfig()
+          .getPathConfiguration()
+          .setPathReconstructionMode(PathReconstructionMode.Fast);
+    }
     infoflow.setTaintWrapper(easyWrapper);
     infoflow.setSourceCodePath(srcPath);
     Consumer<Set<String>> sourceCodeConsumer =
@@ -215,9 +224,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                 String.format(
                     "Found a sensitive flow to sink [%s] from the source [%s]",
                     sinkCode, sourceCode);
-
-            // List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
             List<Pair<Position, String>> relatedInfo = new ArrayList<>();
+            if (showRelated) relatedInfo = getRelated(source.getPath());
             FlowDroidResult r =
                 new FlowDroidResult(
                     Kind.Diagnostic,
@@ -233,6 +241,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
         }
       }
     }
+    for (Stmt source : infoflow.getCollectedSources()) LOG.info("++Detected SOURCE: " + source);
+    for (Stmt sink : infoflow.getCollectedSinks()) LOG.info("--Detected SINK: " + sink);
     return results;
   }
 

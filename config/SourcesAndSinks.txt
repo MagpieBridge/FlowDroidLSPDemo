@@ -4,6 +4,7 @@
 <java.io.PrintWriter: void println(java.lang.String)> -> _SINK_
 <javax.persistence.EntityManager: void persist(java.lang.Object)> -> _SINK_
 <javax.persistence.EntityManager: javax.persistence.TypedQuery createQuery(java.lang.String,java.lang.Class)> -> _SINK_
+<javax.servlet.http.HttpServletResponse: void flushBuffer()> -> _SINK_
       
 <org.apache.http.HttpResponse: org.apache.http.HttpEntity getEntity()> -> _SOURCE_
 <org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity)> -> _SOURCE_
