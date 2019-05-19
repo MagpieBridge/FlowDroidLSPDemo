@@ -11,6 +11,7 @@ public class FlowDroidResult implements AnalysisResult {
   private final Iterable<Pair<Position, String>> related;
   private final DiagnosticSeverity severity;
   private final Pair<Position, String> repair;
+  private final String code;
 
   public FlowDroidResult(
       Kind kind,
@@ -18,13 +19,15 @@ public class FlowDroidResult implements AnalysisResult {
       String msg,
       Iterable<Pair<Position, String>> relatedInfo,
       DiagnosticSeverity severity,
-      Pair<Position, String> repair) {
+      Pair<Position, String> repair,
+      String code) {
     this.kind = kind;
     this.position = pos;
     this.message = msg;
     this.related = relatedInfo;
     this.severity = severity;
     this.repair = repair;
+    this.code = code;
   }
 
   public Kind kind() {
@@ -57,6 +60,8 @@ public class FlowDroidResult implements AnalysisResult {
         + kind
         + ", position="
         + position
+        + ", code="
+        + code
         + ", message="
         + message
         + ", related="
@@ -66,5 +71,10 @@ public class FlowDroidResult implements AnalysisResult {
         + ", repair="
         + repair
         + "]";
+  }
+
+  @Override
+  public String code() {
+    return code;
   }
 }
