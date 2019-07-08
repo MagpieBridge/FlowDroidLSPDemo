@@ -60,7 +60,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private ExecutorService exeService;
   private Future<?> last;
 
-  private boolean showRelated = false;
+  private boolean showRelated = true;
   private boolean debug = false;
 
   public FlowDroidServerAnalysis(String configPath) {
@@ -70,7 +70,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     try {
       easyWrapper =
           new EasyTaintWrapper(
-              new File(configPath + File.separator + "EasyTaintWrapperSource.cfg"));
+              new File(configPath + File.separator + "EasyTaintWrapperSource.txt"));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -79,7 +79,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   @SuppressWarnings("resource")
   private void loadEntryPoints() {
     entryPoints = new ArrayList<>();
-    String entryPointsFile = configPath + File.separator + "EntryPoints.cfg";
+    String entryPointsFile = configPath + File.separator + "EntryPoints.txt";
     String regex = "^<(.+):\\s*(.+)\\s+(.+)\\s*\\((.*)\\)>";
     FileReader fr = null;
     BufferedReader br = null;
@@ -104,7 +104,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private void loadSourceAndSinks() {
     sources = new ArrayList<>();
     sinks = new ArrayList<>();
-    String sourceSinkFile = configPath + File.separator + "SourcesAndSinks.cfg";
+    String sourceSinkFile = configPath + File.separator + "SourcesAndSinks.txt";
     ISourceSinkDefinitionProvider parser;
     try {
       parser = PermissionMethodParser.fromFile(sourceSinkFile);
@@ -121,7 +121,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
   @Override
   public String source() {
-    return "Analyzer Y";
+    return "FlowDroid";
   }
 
   /**

@@ -7,7 +7,7 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-lan
 
 export function activate(context: ExtensionContext) {
     let script = 'java';
-    let args = [ '-Xss1g', '-Xms1g', '-Xmx4g','-jar',context.asAbsolutePath(path.join('analyzer-y-demo.jar')),"-c", context.asAbsolutePath('./config')];
+    let args = [ '-Xss1g', '-Xms1g', '-Xmx4g','-jar',context.asAbsolutePath(path.join('FlowDroidLSP-demo.jar')),"-c", context.asAbsolutePath('./config')];
     let serverOptions: ServerOptions = {
         run : { command: script, args: args },
         debug: { command: script, args: args} //, options: { env: createDebugEnv() }
@@ -22,7 +22,7 @@ export function activate(context: ExtensionContext) {
     };
     
     // Create the language client and start the client.
-    let lc : LanguageClient = new LanguageClient('analyzer-y-demo','Analyzer Y', serverOptions, clientOptions);
+    let lc : LanguageClient = new LanguageClient('FlowDroidLSP-demo','FlowDroid', serverOptions, clientOptions);
     lc.start();
 }
 

@@ -24,4 +24,25 @@ public class DemoFlowDroidTest {
       System.out.println(result.toString());
     }
   }
+
+  @Test
+  public void testAndroid() {
+    Set<String> srcPath = new HashSet<>();
+    Set<String> libPath = new HashSet<>();
+    srcPath.add(
+        "E:\\Git\\Github\\magpie\\flowdroid-lsp-demo\\src\\test\\resources\\DemoFlowDroidAndroid\\app\\src\\main\\java");
+    libPath.add(
+        "E:\\Git\\Github\\magpie\\flowdroid-lsp-demo\\src\\test\\resources\\DemoFlowDroidAndroid\\generatedlib\\out.jar");
+    String configPath = new File("config").getAbsolutePath();
+    String apkFile =
+        "E:\\Git\\Github\\magpie\\flowdroid-lsp-demo\\src\\test\\resources\\DemoFlowDroidAndroid\\app\\build\\outputs\\apk\\debug\\app-debug.apk";
+    String androidPlatforms = "E:\\Git\\androidPlatforms";
+    FlowDroidAndroidServerAnalysis analysis =
+        new FlowDroidAndroidServerAnalysis(configPath, androidPlatforms);
+    Collection<AnalysisResult> results =
+        analysis.analyze(apkFile, srcPath, libPath, androidPlatforms);
+    for (AnalysisResult result : results) {
+      System.out.println(result.toString());
+    }
+  }
 }
