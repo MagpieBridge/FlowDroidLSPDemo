@@ -42,7 +42,8 @@
 	"scripts": {
 		"vscode:prepublish": "cp ../target/flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar  flowdroid-lsp-demo.jar && rm -rf config && cp -r ../config config && npm run compile",
 		"compile": "tsc -b",
-		"watch": "tsc -b -w"
+		"watch": "tsc -b -w",
+		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"dependencies": {
 		"vscode-languageclient": "^5.2.1"
