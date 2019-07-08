@@ -1,5 +1,5 @@
 # FlowDroidLSPDemo
-This project demonstrate integrating FlowDroid into different IDEs with [MagpieBridge](https://github.com/MagpieBridge/MagpieBridge).
+This project demonstrates integrating FlowDroid into different IDEs with [MagpieBridge](https://github.com/MagpieBridge/MagpieBridge).
 
 ## Build FlowDroidLSPDemo with Maven
 
@@ -26,7 +26,7 @@ This project demonstrate integrating FlowDroid into different IDEs with [MagpieB
   [![VSCodeDemo](https://img.youtube.com/vi/S89_V9DGtrk/0.jpg)](http://www.youtube.com/watch?v=S89_V9DGtrk)
 
 3. Run FlowDroidLSPDemo with this [demo Android Project](https://github.com/MagpieBridge/FlowDroidLSPDemo/tree/master/src/test/resources/DemoFlowDroidAndroid) in Android Stuido:
-  - install LSP Support Plugin in Android Studio
+  - install LSP Support Plugin in Android Studio (Note: this plugin is buggy, read more about it [here](https://github.com/gtache/intellij-lsp/issues/91))
     <img src="screenshots/AndroidLSP.PNG" width="800">
   - use the following arguments for defining a language server
     `java -jar PATH_TO_LOCAL_REPO\flowdroid-lsp-demo\target\flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar -c PATH_TO_LOCAL_REPO\flowdroid-lsp-demo\config -a -p PATH_TO_ANDROID_PLATFORMS`
