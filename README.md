@@ -35,6 +35,6 @@ This project demonstrates integrating FlowDroid into different IDEs with [Magpie
     <img src="screenshots/AndroidLSPServerDef.PNG" width="800"> 
    - Open [DemoFlowDroidAndroid](https://github.com/MagpieBridge/FlowDroidLSPDemo/tree/master/src/test/resources/DemoFlowDroidAndroid) in Android Studio.
    - Open a Java file in this project, this will trigger the server to run FlowDroid. It takes a few seconds for FlowDroid to finish the analysis on this Android project. 
-   - watch a demo video on Youtube
+   - Watch a demo video on Youtube
    
   [![AndroidStudioDemo](https://img.youtube.com/vi/1kDWslIjPus/0.jpg)](http://www.youtube.com/watch?v=1kDWslIjPus)
