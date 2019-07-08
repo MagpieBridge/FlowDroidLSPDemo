@@ -30,8 +30,7 @@ public class FlowDroidAndroidServerAnalysis implements ServerAnalysis {
 
   @Override
   public String source() {
-    // TODO Auto-generated method stub
-    return null;
+    return "Analyzer Y";
   }
 
   @Override

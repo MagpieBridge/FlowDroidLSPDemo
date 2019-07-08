@@ -60,23 +60,26 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private ExecutorService exeService;
   private Future<?> last;
 
+  private boolean showRelated = false;
+  private boolean debug = false;
+
   public FlowDroidServerAnalysis(String configPath) {
     this.configPath = configPath;
     exeService = Executors.newSingleThreadExecutor();
-    loadSourceAndSinks();
     loadEntryPoints();
     try {
       easyWrapper =
           new EasyTaintWrapper(
-              new File(configPath + File.separator + "EasyTaintWrapperSource.txt"));
+              new File(configPath + File.separator + "EasyTaintWrapperSource.cfg"));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
+  @SuppressWarnings("resource")
   private void loadEntryPoints() {
     entryPoints = new ArrayList<>();
-    String entryPointsFile = configPath + File.separator + "EntryPoints.txt";
+    String entryPointsFile = configPath + File.separator + "EntryPoints.cfg";
     String regex = "^<(.+):\\s*(.+)\\s+(.+)\\s*\\((.*)\\)>";
     FileReader fr = null;
     BufferedReader br = null;
@@ -101,7 +104,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private void loadSourceAndSinks() {
     sources = new ArrayList<>();
     sinks = new ArrayList<>();
-    String sourceSinkFile = configPath + File.separator + "SourcesAndSinks.txt";
+    String sourceSinkFile = configPath + File.separator + "SourcesAndSinks.cfg";
     ISourceSinkDefinitionProvider parser;
     try {
       parser = PermissionMethodParser.fromFile(sourceSinkFile);
@@ -118,7 +121,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
   @Override
   public String source() {
-    return "FlowDroid";
+    return "Analyzer Y";
   }
 
   /**
@@ -171,15 +174,21 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   }
 
   public Collection<AnalysisResult> analyze(Set<String> srcPath, Set<String> libPath) {
-    LOG.info("entryPoints: " + entryPoints);
-    LOG.info("srcPath: " + srcPath);
-    LOG.info("libPath: " + libPath);
+    // LOG.info("entryPoints: " + entryPoints);
+    // LOG.info("srcPath: " + srcPath);
+    // LOG.info("libPath: " + libPath);
+    loadSourceAndSinks();
     Infoflow infoflow = new Infoflow();
+    infoflow.getConfig().setInspectSources(false);
     infoflow.getConfig().setInspectSinks(false);
-    infoflow
-        .getConfig()
-        .getPathConfiguration()
-        .setPathReconstructionMode(PathReconstructionMode.Fast);
+    infoflow.getConfig().setLogSourcesAndSinks(debug);
+    infoflow.getConfig().setWriteOutputFiles(debug);
+    if (showRelated) {
+      infoflow
+          .getConfig()
+          .getPathConfiguration()
+          .setPathReconstructionMode(PathReconstructionMode.Fast);
+    }
     infoflow.setTaintWrapper(easyWrapper);
     infoflow.setSourceCodePath(srcPath);
     Consumer<Set<String>> sourceCodeConsumer =
@@ -194,16 +203,16 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     Collection<AnalysisResult> results = new HashSet<>();
     MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
     if (res != null) {
-      infoflow.getResults().printResults();
+      // infoflow.getResults().printResults();
       for (ResultSinkInfo sink : res.keySet()) {
-        PositionInfo positionInfo =
+        PositionInfo sinkPos =
             ((PositionInfoTag) sink.getStmt().getTag("PositionInfoTag")).getPositionInfo();
         for (ResultSourceInfo source : res.get(sink)) {
 
           PositionInfo sourcePos =
               ((PositionInfoTag) source.getStmt().getTag("PositionInfoTag")).getPositionInfo();
           try {
-            String sinkCode = SourceCodeReader.getLinesInString(positionInfo.getStmtPosition());
+            String sinkCode = SourceCodeReader.getLinesInString(sinkPos.getStmtPosition());
             String sourceCode = SourceCodeReader.getLinesInString(sourcePos.getStmtPosition());
             if (sinkCode.isEmpty()) {
               sinkCode = sink.getDefinition().toString();
@@ -211,27 +220,37 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
             if (sourceCode.isEmpty()) {
               sourceCode = source.getDefinition().toString();
             }
+            String[] strs = sourcePos.getStmtPosition().getURL().toString().split("/");
+            String className = "";
+            if (strs.length > 0) className = strs[strs.length - 1];
             String msg =
                 String.format(
-                    "Found a sensitive flow to sink [%s] from the source [%s]",
-                    sinkCode, sourceCode);
-
-            // List<Pair<Position, String>> relatedInfo = getRelated(source.getPath());
+                    "Found a sensitive flow to sink [%s] from the source [%s] at line %d in %s",
+                    sinkCode, sourceCode, sourcePos.getStmtPosition().getFirstLine(), className);
             List<Pair<Position, String>> relatedInfo = new ArrayList<>();
+            if (showRelated) relatedInfo = getRelated(source.getPath());
+            StringBuilder code = new StringBuilder();
+            code.append(SourceCodeReader.getLinesInString(sourcePos.getStmtPosition()));
+            code.append(SourceCodeReader.getLinesInString(sinkPos.getStmtPosition()));
             FlowDroidResult r =
                 new FlowDroidResult(
                     Kind.Diagnostic,
-                    positionInfo.getStmtPosition(),
+                    sinkPos.getStmtPosition(),
                     msg,
                     relatedInfo,
                     DiagnosticSeverity.Error,
-                    null);
+                    null,
+                    code.toString());
             results.add(r);
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
         }
       }
+    }
+    if (debug) {
+      for (Stmt source : infoflow.getCollectedSources()) LOG.info("++Detected SOURCE: " + source);
+      for (Stmt sink : infoflow.getCollectedSinks()) LOG.info("--Detected SINK: " + sink);
     }
     return results;
   }

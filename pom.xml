@@ -7,7 +7,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
 	    <magpiebridge.version>0.0.1-SNAPSHOT</magpiebridge.version>
-		<futuresoot.version>4.0.0.2</futuresoot.version>
+		<futuresoot.version>4.0.0.3</futuresoot.version>
    		<flowdroid.version>2.7.1</flowdroid.version>
 	</properties>
 	<dependencies>

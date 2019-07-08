@@ -1,6 +1,6 @@
 {
-	"name": "flowdroid-lsp-demo",
-	"description": "A language server example for FlowDroid",
+	"name": "analyzer-y-demo",
+	"description": "A language server example for Analyzer Y",
 	"author": "Linghui Luo ",
 	"license": "EPL-2.0",
 	"version": "0.0.1",
@@ -23,9 +23,9 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "FlowDroid LSP Demo",
+			"title": "Analyzer Y",
 			"properties": {
-				"flowdroid-lsp-demo.trace.server": {
+				"analyzer-y-demo.trace.server": {
 					"scope": "window",
 					"type": "string",
 					"enum": [
@@ -40,7 +40,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "cp ../target/flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar  flowdroid-lsp-demo.jar && rm -rf config && cp -r ../config config && npm run compile",
+		"vscode:prepublish": "cp ../target/flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar  analyzer-y-demo.jar && rm -rf config && cp -r ../config config && npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"postinstall": "node ./node_modules/vscode/bin/install"
