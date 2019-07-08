@@ -11,7 +11,7 @@ This project demonstrates integrating FlowDroid into different IDEs with [Magpie
 
 ## Run FlowDroidLSP in IDEs
 1. Run FlowDroidLSPDemo with this [demo Java Project](https://github.com/MagpieBridge/FlowDroidLSPDemo/tree/master/src/test/resources/DemoFlowDroid) in Eclipse: 
-  - use the following arguments for the lanuch configuration 
+  - Use the following arguments for the lanuch configuration 
    ```-jar PATH_TO_LOCAL_REPO\flowdroid-lsp-demo\target\flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar -c  PATH_TO_LOCAL_REPO\flowdroid-lsp-demo\config``` (see [tutorial](https://github.com/MagpieBridge/MagpieBridge/wiki/Create-your-first-project-with-MagpieBridge) 
 )
   - Import [DemoFlowDroid](https://github.com/MagpieBridge/FlowDroidLSPDemo/tree/master/src/test/resources/DemoFlowDroid) as Maven project in Eclipse.
