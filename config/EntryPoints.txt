@@ -1,3 +1,0 @@
-<magpiebridge.onlineshop.api.ShopController: java.lang.String doRegistration(javax.servlet.http.HttpServletRequest, org.springframework.ui.Model)>
-<magpiebridge.onlineshop.api.ShopController: java.lang.String createComment(javax.servlet.http.HttpServletRequest)>
-<magpiebridge.onlineshop.api.ShopController: void getOrders(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)>
