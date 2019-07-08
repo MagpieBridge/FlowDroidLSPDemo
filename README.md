@@ -1,3 +1,6 @@
+# FlowDroidLSPDemo
+This project demonstrate integrating FlowDroid into different IDEs with [MagpieBridge](https://github.com/MagpieBridge/MagpieBridge).
+
 ## Build FlowDroidLSPDemo with Maven
 
 1. check out adapted FlowDroid with
