@@ -1,0 +1,15 @@
+    
+language: java
+before_install:
+  
+  - git clone --branch=lsp https://github.com/linghuiluo/FlowDroid.git $HOME/build/MagpieBridge/FlowDroid
+  - cd $HOME/build/MagpieBridge/FlowDroid
+  - mvn install -DskipTests
+  
+  - git clone --branch=develop https://github.com/MagpieBridge/MagpieBridge.git $HOME/build/MagpieBridge/MagpieBridge
+  - cd $HOME/build/MagpieBridge/MagpieBridge
+  - mvn install -DskipTests
+  
+  - cd $HOME/build/MagpieBridge/FlowDroidLSPDemo
+script:   
+  - mvn install -DskipTests
