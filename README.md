@@ -1,4 +1,4 @@
-# FlowDroidLSPDemo
+# FlowDroidLSPDemo[![Build Status](https://travis-ci.com/MagpieBridge/FlowDroidLSPDemo.svg?branch=master)](https://travis-ci.com/MagpieBridge/FlowDroidLSPDemo)
 This project demonstrates integrating FlowDroid into different IDEs with [MagpieBridge](https://github.com/MagpieBridge/MagpieBridge).
 
 ## Build FlowDroidLSPDemo with Maven
