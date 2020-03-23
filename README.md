@@ -3,7 +3,7 @@ This project demonstrates integrating FlowDroid into different IDEs with [Magpie
 
 ## Build FlowDroidLSPDemo with Maven
 
-1 Build MagpieBridge by yourself using the [MagpieBridge ECOOP19](https://github.com/MagpieBridge/MagpieBridge/releases/tag/ECOOP19) release. 
+1. Build MagpieBridge by yourself using the [MagpieBridge ECOOP19](https://github.com/MagpieBridge/MagpieBridge/releases/tag/ECOOP19) release. 
 2. Check out adapted FlowDroid with
 ```git checkout -b lsp https://github.com/linghuiluo/FlowDroid.git```.
 3. Install FlowDroid into your local maven repository with `mvn install -DskipTests`.
