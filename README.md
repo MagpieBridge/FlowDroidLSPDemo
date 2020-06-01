@@ -1,4 +1,4 @@
-# FlowDroidLSPDemo[![Build Status](https://travis-ci.com/MagpieBridge/FlowDroidLSPDemo.svg?branch=master)](https://travis-ci.com/MagpieBridge/FlowDroidLSPDemo)
+# FlowDroidLSPDemo
 This project demonstrates integrating FlowDroid into different IDEs with [MagpieBridge](https://github.com/MagpieBridge/MagpieBridge).
 
 ## Build FlowDroidLSPDemo with Maven
@@ -6,7 +6,7 @@ This project demonstrates integrating FlowDroid into different IDEs with [Magpie
 1. Build MagpieBridge by yourself using the [MagpieBridge ECOOP19](https://github.com/MagpieBridge/MagpieBridge/releases/tag/ECOOP19) release. 
 2. Check out adapted FlowDroid with
 ```git checkout -b lsp https://github.com/linghuiluo/FlowDroid.git```.
-3. Install FlowDroid into your local maven repository with `mvn install -DskipTests`.
+3. Install FlowDroid into your local maven repository with `mvn install -DskipTests` (or download, unzip and copy [this](https://github.com/MagpieBridge/FlowDroidLSPDemo/releases/download/v0.0.1/flowdroid.zip) to your local m2 repository)
 4. Check out master branch of this repository, install it with `mvn install -DskipTests`.
 5. A jar file called `flowdroid-lsp-demo-0.0.1-SNAPSHOT.jar` will be created in the `target` directory. Use it to configure the a language server in an editor following the step 11 from this [tutorial](https://github.com/MagpieBridge/MagpieBridge/wiki/Create-your-first-project-with-MagpieBridge) 
 
