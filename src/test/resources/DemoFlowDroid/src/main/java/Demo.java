@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletResponse;
 
 public class Demo {
 
+  public Demo(){}
+ 
   public static void main(String[] args) throws IOException {
     Demo Demo = new Demo();
     Demo.doGet(null, null);
