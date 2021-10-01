@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +19,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import magpiebridge.core.AnalysisConsumer;
 import magpiebridge.core.AnalysisResult;
@@ -26,23 +27,26 @@ import magpiebridge.core.Kind;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
 import magpiebridge.projectservice.java.JavaProjectService;
-import magpiebridge.util.SourceCodePositionFinder;
 import magpiebridge.util.SourceCodeReader;
-
-import org.eclipse.jgit.internal.storage.file.PackFile;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import soot.SootMethod;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.InfoflowConfiguration;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.data.parsers.PermissionMethodParser;
+import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
+import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
+import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
 import soot.jimple.infoflow.sourcesSinks.definitions.ISourceSinkDefinition;
 import soot.jimple.infoflow.sourcesSinks.definitions.ISourceSinkDefinitionProvider;
-import soot.jimple.infoflow.sourcesSinks.definitions.StatementSourceSinkDefinition;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
+import soot.options.Options;
 import soot.util.MultiMap;
 
 public class FlowDroidServerAnalysis implements ServerAnalysis {
@@ -52,8 +56,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private List<String> sinks;
   private List<String> entryPoints;
   private IEntryPointCreator entryPointCreator;
-  private String appClassPath="";
-  private String libPath="";
+  private String appClassPath = "";
+  private String libPath = "";
   private String configPath;
   private EasyTaintWrapper easyWrapper;
   private ExecutorService exeService;
@@ -134,21 +138,24 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
       Optional<IProjectService> opt = server.getProjectService("java");
       if (opt.isPresent()) {
         JavaProjectService ps = (JavaProjectService) server.getProjectService("java").get();
-        appClassPath= ps.getClassPath().toString();
-        for(Path p: ps.getLibraryPath()) {
-          libPath+=p.toAbsolutePath().toString()+ File.pathSeparator;
+        for (Path p : ps.getClassPath()) {
+          appClassPath += p.toAbsolutePath().toString() + File.pathSeparator;
         }
+        for (Path p : ps.getLibraryPath()) {
+          libPath += p.toAbsolutePath().toString() + File.pathSeparator;
+        }
+
         if (libPath.isEmpty()) {
-       
-          for(Path p: ps.getLibraryPath()) {
-            libPath+=p.toAbsolutePath().toString()+ File.pathSeparator;
+          for (Path p : ps.getLibraryPath()) {
+            libPath += p.toAbsolutePath().toString() + File.pathSeparator;
           }
-          libPath+= System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar";
         }
+
+        libPath +=
+            System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar";
       }
     }
   }
-
   /**
    * Set source path with the project service provided by the server.
    *
@@ -164,15 +171,18 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   }
 
   public Collection<AnalysisResult> analyze(String appClassPath, String libPath) {
-    // LOG.info("entryPoints: " + entryPoints);
-    // LOG.info("srcPath: " + srcPath);
-    // LOG.info("libPath: " + libPath);
     loadSourceAndSinks();
     Infoflow infoflow = new Infoflow();
     infoflow.getConfig().setInspectSources(false);
     infoflow.getConfig().setInspectSinks(false);
     infoflow.getConfig().setLogSourcesAndSinks(debug);
     infoflow.getConfig().setWriteOutputFiles(debug);
+    infoflow.setSootConfig(
+        new IInfoflowConfig() {
+          public void setSootOptions(Options options, InfoflowConfiguration config) {
+            Options.v().set_keep_line_number(true);
+          }
+        });
     if (showRelated) {
       infoflow
           .getConfig()
@@ -180,27 +190,90 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           .setPathReconstructionMode(PathReconstructionMode.Fast);
     }
     infoflow.setTaintWrapper(easyWrapper);
+
+    Collection<AnalysisResult> proResults = new HashSet<>();
+    infoflow.addResultsAvailableHandler(
+        new ResultsAvailableHandler() {
+
+          protected URL makeFileUrl(String className) throws MalformedURLException {
+            String fileUrl = "file://" + appSourcePath + "/" + className + ".java";
+            return new URL(fileUrl);
+          }
+
+          protected FlowDroidPosition makePostion(IInfoflowCFG cfg, Stmt info) {
+            SootMethod fileMethod = cfg.getMethodOf(info);
+            URL fileUrl = null;
+            try {
+              fileUrl = makeFileUrl(fileMethod.getDeclaringClass().toString());
+            } catch (MalformedURLException e) {
+              e.printStackTrace();
+            }
+
+            return new FlowDroidPosition(
+                info.getJavaSourceStartLineNumber(),
+                info.getJavaSourceStartLineNumber() + 1,
+                0,
+                fileUrl);
+          }
+
+          @Override
+          public void onResultsAvailable(IInfoflowCFG cfg, InfoflowResults results) {
+            MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
+            if (res != null) {
+              int leaks = 0;
+              String sourceCode = null;
+              FlowDroidPosition sourcePos = null;
+              for (ResultSinkInfo sink : res.keySet()) {
+                List<Pair<Position, String>> relatedInfo = new ArrayList<>();
+                for (ResultSourceInfo source : res.get(sink)) {
+                  if (source.getPath() != null) {
+                    for (Stmt pathElement : source.getPath()) {
+                      sourcePos = makePostion(cfg, pathElement);
+                      sourceCode = null;
+                      try {
+                        sourceCode = SourceCodeReader.getLinesInString(sourcePos);
+                      } catch (IOException e) {
+                        e.printStackTrace();
+                      }
+                      Pair<Position, String> pair = Pair.make(sourcePos, sourceCode);
+                      if (!relatedInfo.contains(pair)) relatedInfo.add(pair);
+                    }
+                  }
+                  leaks++;
+                }
+
+                FlowDroidPosition sinkPos = makePostion(cfg, sink.getStmt());
+                String sinkCode = null;
+                try {
+                  sinkCode = SourceCodeReader.getLinesInString(sinkPos);
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+                StringBuilder str =
+                    new StringBuilder("Found a sensitive flow from source to sink ");
+
+                FlowDroidResult result =
+                    new FlowDroidResult(
+                        Kind.Diagnostic,
+                        sinkPos,
+                        str.toString(),
+                        relatedInfo,
+                        DiagnosticSeverity.Error,
+                        null,
+                        sinkCode);
+
+                proResults.add(result);
+              }
+              System.err.println("Found " + leaks + " leaks.");
+            }
+          }
+        });
+
     infoflow.computeInfoflow(appClassPath, libPath, entryPointCreator, sources, sinks);
-    Collection<AnalysisResult> results = new HashSet<>();
-    MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
-    if (res != null) {
-      int leaks = 0; 
-      for (ResultSinkInfo sink : res.keySet()) {
-        int sinkLineNo =  sink.getStmt().getJavaSourceStartLineNumber();
-        for (ResultSourceInfo source : res.get(sink)) {
-          int sourceLineNo = source.getStmt().getJavaSourceStartLineNumber();
-          leaks++;
-          // TODO write code convert to FlowDroidResult. 
-        }
-      }
-      System.err.println("Found "+leaks +" leaks.");
-      infoflow.getResults().printResults();
-    }
-
-    return results;
+    infoflow.getResults().printResults();
+    // System.err.println("Pro Result :" + proResults);
+    return proResults;
   }
-
-
 
   @Override
   public void analyze(Collection<? extends Module> files, AnalysisConsumer server, boolean rerun) {
@@ -221,6 +294,5 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
               }
             });
     last = future;
-    
   }
 }
