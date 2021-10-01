@@ -58,6 +58,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private EasyTaintWrapper easyWrapper;
   private ExecutorService exeService;
   private Future<?> last;
+  private String appSourcePath = "";
 
   private boolean showRelated = true;
   private boolean debug = false;
@@ -148,6 +149,19 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     }
   }
 
+  /**
+   * Set source path with the project service provided by the server.
+   *
+   * @param server
+   */
+  public void setSourcePath(MagpieServer server) {
+    MagpieServer s = (MagpieServer) server;
+    JavaProjectService ps = (JavaProjectService) s.getProjectService("java").get();
+    Set<Path> sourcePath = ps.getSourcePath();
+    if (!sourcePath.isEmpty()) {
+      appSourcePath = sourcePath.iterator().next().toString();
+    }
+  }
 
   public Collection<AnalysisResult> analyze(String appClassPath, String libPath) {
     // LOG.info("entryPoints: " + entryPoints);
@@ -199,7 +213,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
             new Runnable() {
               @Override
               public void run() {
-                setClassPath((MagpieServer)server);
+                setClassPath((MagpieServer) server);
+                setSourcePath((MagpieServer) server);
                 Collection<AnalysisResult> results = Collections.emptyList();
                 results = analyze(appClassPath, libPath);
                 server.consume(results, source());
