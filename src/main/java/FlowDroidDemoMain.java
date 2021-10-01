@@ -39,22 +39,25 @@ public class FlowDroidDemoMain {
       return;
     }
 
-    Supplier<MagpieServer> createServer = () -> {
-      String config = null;
-      if (!cmd.hasOption("c")) {
-        helper.printHelp(cmdLineSyntax, options);
-      } else {
-        config = cmd.getOptionValue("c");
-      }
-      ServerConfiguration c = new ServerConfiguration();
-      MagpieServer server = new MagpieServer(c);
-      String language = "java";
-      // analyze java project
-      IProjectService javaProjectService = new JavaProjectService();
-      server.addProjectService(language, javaProjectService);
-      server.addAnalysis(Either.forLeft(new FlowDroidServerAnalysis(config)));
-      return server;
-    };
+    Supplier<MagpieServer> createServer =
+        () -> {
+          String config = null;
+          if (!cmd.hasOption("c")) {
+            helper.printHelp(cmdLineSyntax, options);
+          } else {
+            config = cmd.getOptionValue("c");
+          }
+          ServerConfiguration c = new ServerConfiguration();
+          MagpieServer server = new MagpieServer(c);
+          String language = "java";
+
+          // analyze java project
+          IProjectService javaProjectService = new JavaProjectService();
+
+          server.addProjectService(language, javaProjectService);
+          server.addAnalysis(Either.forLeft(new FlowDroidServerAnalysis(config)), language);
+          return server;
+        };
 
     if (cmd.hasOption("socket")) {
       int port = Integer.parseInt(cmd.getOptionValue("port", DEFAULT_PORT));
