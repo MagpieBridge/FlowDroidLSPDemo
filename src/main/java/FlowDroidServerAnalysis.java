@@ -25,6 +25,8 @@ import magpiebridge.core.AnalysisResult;
 import magpiebridge.core.IProjectService;
 import magpiebridge.core.Kind;
 import magpiebridge.core.MagpieServer;
+import magpiebridge.core.SARIFCodePosition;
+import magpiebridge.core.SARIFResult;
 import magpiebridge.core.ServerAnalysis;
 import magpiebridge.projectservice.java.JavaProjectService;
 import magpiebridge.util.SourceCodeReader;
@@ -200,7 +202,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
             return new URL(fileUrl);
           }
 
-          protected FlowDroidPosition makePostion(IInfoflowCFG cfg, Stmt info) {
+          protected SARIFCodePosition makePostion(IInfoflowCFG cfg, Stmt info) {
             SootMethod fileMethod = cfg.getMethodOf(info);
             URL fileUrl = null;
             try {
@@ -209,11 +211,14 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
               e.printStackTrace();
             }
 
-            return new FlowDroidPosition(
+            return new SARIFCodePosition(
                 info.getJavaSourceStartLineNumber(),
-                info.getJavaSourceStartLineNumber() + 1,
                 0,
-                fileUrl);
+                info.getJavaSourceStartLineNumber() + 1,
+                -1,
+                fileUrl,
+                fileMethod.getSubSignature());
+          }
           }
 
           @Override
@@ -222,7 +227,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
             if (res != null) {
               int leaks = 0;
               String sourceCode = null;
-              FlowDroidPosition sourcePos = null;
+              SARIFCodePosition sourcePos = null;
               for (ResultSinkInfo sink : res.keySet()) {
                 List<Pair<Position, String>> relatedInfo = new ArrayList<>();
                 for (ResultSourceInfo source : res.get(sink)) {
@@ -242,7 +247,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                   leaks++;
                 }
 
-                FlowDroidPosition sinkPos = makePostion(cfg, sink.getStmt());
+                SARIFCodePosition sinkPos = makePostion(cfg, sink.getStmt());
                 String sinkCode = null;
                 try {
                   sinkCode = SourceCodeReader.getLinesInString(sinkPos);
@@ -252,8 +257,8 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                 StringBuilder str =
                     new StringBuilder("Found a sensitive flow from source to sink ");
 
-                FlowDroidResult result =
-                    new FlowDroidResult(
+                SARIFResult result =
+                    new SARIFResult(
                         Kind.Diagnostic,
                         sinkPos,
                         str.toString(),
