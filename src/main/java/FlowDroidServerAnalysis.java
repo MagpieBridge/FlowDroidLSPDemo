@@ -233,7 +233,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
             return method;
           }
 
-          protected FlowCodePosition makePostion(IInfoflowCFG cfg, Stmt info) {
+          protected Position makePostion(IInfoflowCFG cfg, Stmt info) {
             SootMethod fileMethod = cfg.getMethodOf(info);
             String fileUrl = null;
             try {
@@ -287,7 +287,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
               for (ResultSinkInfo sink : res.keySet()) {
                 List<Pair<Position, String>> relatedInfo = new ArrayList<>();
                 String sourceCode = null;
-                FlowCodePosition sourcePos = null;
+                Position sourcePos = null;
                 ResultSourceInfo mainSource = null;
                 for (ResultSourceInfo source : res.get(sink)) {
                   if (source.getPath() != null) {
@@ -313,7 +313,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                   }
                 }
 
-                FlowCodePosition sinkPos = makePostion(cfg, sink.getStmt());
+                Position sinkPos = makePostion(cfg, sink.getStmt());
                 String sinkCode = null;
                 try {
                   sinkCode = SourceCodeReader.getLinesInString(sinkPos);
@@ -321,7 +321,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                   e.printStackTrace();
                 }
 
-                FlowCodePosition mainSourcePos = makePostion(cfg, mainSource.getStmt());
+                Position mainSourcePos = makePostion(cfg, mainSource.getStmt());
                 String mainSourceCode = null;
                 try {
                   mainSourceCode = SourceCodeReader.getLinesInString(mainSourcePos);
@@ -340,7 +340,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                         mainSourcePos.getFirstLine(),
                         className);
 
-                FlowAnalysisResult result =
+                AnalysisResult result =
                     new FlowAnalysisResult(
                         Kind.Diagnostic,
                         sinkPos,
