@@ -29,6 +29,8 @@ import magpiebridge.core.Kind;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
 import magpiebridge.projectservice.java.JavaProjectService;
+import magpiebridge.util.SourceCodeInfo;
+import magpiebridge.util.SourceCodePositionFinder;
 import magpiebridge.util.SourceCodeReader;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import soot.SootMethod;
@@ -241,14 +243,42 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
               e.printStackTrace();
             }
 
+            if (fileUrl == null) {
+              return null;
+            }
+
+            File javaFile = new File(fileUrl);
+
+            SourceCodeInfo codeInfo =
+                SourceCodePositionFinder.findCode(javaFile, info.getJavaSourceStartLineNumber());
+
+            if (codeInfo == null) {
+              return null;
+            }
+            Position codePostion = codeInfo.toPosition();
             return new FlowCodePosition(
-                info.getJavaSourceStartLineNumber(),
-                0,
-                info.getJavaSourceStartLineNumber() + 1,
-                -1,
-                fileUrl,
-                fileMethod.getSubSignature());
-          	
+                codePostion.getFirstLine(),
+                codePostion.getFirstCol(),
+                codePostion.getLastLine(),
+                codePostion.getLastCol(),
+                codePostion.getURL(),
+                getMethodName(fileMethod.getSubSignature()));
+          }
+
+          protected boolean equalPosition(Position first, Position second) {
+            if (first == null || second == null) {
+              if (first == second) return true;
+              return false;
+            }
+
+            if (first.getFirstCol() == second.getFirstCol()
+                && first.getFirstLine() == second.getFirstLine()
+                && first.getFirstCol() == second.getFirstCol()
+                && first.getLastCol() == second.getLastCol()) {
+              return true;
+            }
+
+            return false;
           }
 
           @Override
