@@ -200,6 +200,25 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           protected URL makeFileUrl(String className) throws MalformedURLException {
             String fileUrl = "file://" + appSourcePath + "/" + className + ".java";
             return new URL(fileUrl);
+
+          protected String removeParameterPath(String parmetersOfMethod) {
+            String parameters[] = parmetersOfMethod.split(",");
+            String pathRemovedParameters = "";
+
+            for (int i = 0; i < parameters.length; i++) {
+              if (i != 0) {
+                pathRemovedParameters += ", ";
+              }
+
+              String parameterSplit[] = parameters[i].split("\\.");
+              pathRemovedParameters +=
+                  parameterSplit.length > 0
+                      ? parameterSplit[parameterSplit.length - 1]
+                      : parameters[i];
+            }
+
+            return pathRemovedParameters;
+          }
           }
 
           protected FlowCodePosition makePostion(IInfoflowCFG cfg, Stmt info) {
