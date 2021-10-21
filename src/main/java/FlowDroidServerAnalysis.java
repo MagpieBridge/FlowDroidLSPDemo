@@ -284,7 +284,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           public void onResultsAvailable(IInfoflowCFG cfg, InfoflowResults results) {
             MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
             if (res != null) {
-              //int leaks = 0;
               for (ResultSinkInfo sink : res.keySet()) {
                 List<Pair<Position, String>> relatedInfo = new ArrayList<>();
                 String sourceCode = null;
@@ -312,7 +311,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                       }
                     }
                   }
-                  //leaks++;
                 }
 
                 FlowCodePosition sinkPos = makePostion(cfg, sink.getStmt());
@@ -354,7 +352,6 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
                 proResults.add(result);
               }
-              // System.err.println("Found " + leaks + " leaks.");
             }
           }
         });
