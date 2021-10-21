@@ -197,9 +197,9 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
     infoflow.addResultsAvailableHandler(
         new ResultsAvailableHandler() {
 
-          protected URL makeFileUrl(String className) throws MalformedURLException {
-            String fileUrl = "file://" + appSourcePath + "/" + className + ".java";
-            return new URL(fileUrl);
+          protected String getFileUrl(String className) throws MalformedURLException {
+            return appSourcePath + "/" + className + ".java";
+          }
 
           protected String removeParameterPath(String parmetersOfMethod) {
             String parameters[] = parmetersOfMethod.split(",");
@@ -234,9 +234,9 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
           protected FlowCodePosition makePostion(IInfoflowCFG cfg, Stmt info) {
             SootMethod fileMethod = cfg.getMethodOf(info);
-            URL fileUrl = null;
+            String fileUrl = null;
             try {
-              fileUrl = makeFileUrl(fileMethod.getDeclaringClass().toString());
+              fileUrl = getFileUrl(fileMethod.getDeclaringClass().toString());
             } catch (MalformedURLException e) {
               e.printStackTrace();
             }
