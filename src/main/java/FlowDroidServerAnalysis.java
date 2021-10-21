@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -285,26 +284,35 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           public void onResultsAvailable(IInfoflowCFG cfg, InfoflowResults results) {
             MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
             if (res != null) {
-              int leaks = 0;
-              String sourceCode = null;
-              FlowCodePosition sourcePos = null;
+              //int leaks = 0;
               for (ResultSinkInfo sink : res.keySet()) {
                 List<Pair<Position, String>> relatedInfo = new ArrayList<>();
+                String sourceCode = null;
+                FlowCodePosition sourcePos = null;
+                ResultSourceInfo mainSource = null;
                 for (ResultSourceInfo source : res.get(sink)) {
                   if (source.getPath() != null) {
+                    mainSource = source;
+                    Position previousPosition = null;
                     for (Stmt pathElement : source.getPath()) {
                       sourcePos = makePostion(cfg, pathElement);
-                      sourceCode = null;
-                      try {
-                        sourceCode = SourceCodeReader.getLinesInString(sourcePos);
-                      } catch (IOException e) {
-                        e.printStackTrace();
+
+                      if (!equalPosition(sourcePos, previousPosition)) {
+                        /*System.out.println("Prv: " + previousPosition);
+                        System.out.println("Now: " + sourcePos);*/
+                        sourceCode = null;
+                        try {
+                          sourceCode = SourceCodeReader.getLinesInString(sourcePos);
+                        } catch (IOException e) {
+                          e.printStackTrace();
+                        }
+                        Pair<Position, String> pair = Pair.make(sourcePos, sourceCode);
+                        relatedInfo.add(pair);
+                        previousPosition = sourcePos;
                       }
-                      Pair<Position, String> pair = Pair.make(sourcePos, sourceCode);
-                      if (!relatedInfo.contains(pair)) relatedInfo.add(pair);
                     }
                   }
-                  leaks++;
+                  //leaks++;
                 }
 
                 FlowCodePosition sinkPos = makePostion(cfg, sink.getStmt());
@@ -314,14 +322,31 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
                 } catch (IOException e) {
                   e.printStackTrace();
                 }
-                StringBuilder str =
-                    new StringBuilder("Found a sensitive flow from source to sink ");
+
+                FlowCodePosition mainSourcePos = makePostion(cfg, mainSource.getStmt());
+                String mainSourceCode = null;
+                try {
+                  mainSourceCode = SourceCodeReader.getLinesInString(mainSourcePos);
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+
+                SootMethod fileMethod = cfg.getMethodOf(mainSource.getStmt());
+                String className = fileMethod.getDeclaringClass().toString();
+
+                String str =
+                    String.format(
+                        "Found a sensitive flow to sink [%s] from the source [%s] at line %d in %s",
+                        sinkCode.trim(),
+                        mainSourceCode.trim(),
+                        mainSourcePos.getFirstLine(),
+                        className);
 
                 FlowAnalysisResult result =
                     new FlowAnalysisResult(
                         Kind.Diagnostic,
                         sinkPos,
-                        str.toString(),
+                        str,
                         relatedInfo,
                         DiagnosticSeverity.Error,
                         null,
@@ -329,7 +354,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
                 proResults.add(result);
               }
-              System.err.println("Found " + leaks + " leaks.");
+              // System.err.println("Found " + leaks + " leaks.");
             }
           }
         });
