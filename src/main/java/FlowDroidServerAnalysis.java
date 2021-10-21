@@ -219,6 +219,17 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
             return pathRemovedParameters;
           }
+
+          protected String getMethodName(String method) {
+            String firstParse[] = method.split("\\(");
+
+            if (firstParse.length > 0) {
+              String classRemovedMethod = removeParameterPath(firstParse[0]) + "(";
+              classRemovedMethod += removeParameterPath(firstParse[1]);
+              return classRemovedMethod;
+            }
+
+            return method;
           }
 
           protected FlowCodePosition makePostion(IInfoflowCFG cfg, Stmt info) {
