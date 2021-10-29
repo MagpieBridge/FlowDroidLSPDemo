@@ -282,7 +282,7 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
 
           @Override
           public void onResultsAvailable(IInfoflowCFG cfg, InfoflowResults results) {
-            MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
+            MultiMap<ResultSinkInfo, ResultSourceInfo> res = results.getResults();
             if (res != null) {
               for (ResultSinkInfo sink : res.keySet()) {
                 List<Pair<Position, String>> relatedInfo = new ArrayList<>();
