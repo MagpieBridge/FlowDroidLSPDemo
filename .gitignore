@@ -24,3 +24,5 @@ dependency-reduced-pom\.xml
 vscode/FlowDroidLSP-0\.0\.1\.vsix
 
 vscode/FlowDroidLSP-demo\.jar
+
+.DS_Store
