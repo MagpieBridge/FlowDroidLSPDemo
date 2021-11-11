@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,32 +18,38 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import magpiebridge.core.AnalysisConsumer;
 import magpiebridge.core.AnalysisResult;
+import magpiebridge.core.FlowAnalysisResult;
+import magpiebridge.core.FlowCodePosition;
 import magpiebridge.core.IProjectService;
 import magpiebridge.core.Kind;
 import magpiebridge.core.MagpieServer;
 import magpiebridge.core.ServerAnalysis;
 import magpiebridge.projectservice.java.JavaProjectService;
+import magpiebridge.util.SourceCodeInfo;
 import magpiebridge.util.SourceCodePositionFinder;
 import magpiebridge.util.SourceCodeReader;
-
-import org.eclipse.jgit.internal.storage.file.PackFile;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import soot.SootMethod;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.InfoflowConfiguration;
 import soot.jimple.infoflow.InfoflowConfiguration.PathReconstructionMode;
 import soot.jimple.infoflow.android.data.parsers.PermissionMethodParser;
+import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
+import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
+import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
 import soot.jimple.infoflow.sourcesSinks.definitions.ISourceSinkDefinition;
 import soot.jimple.infoflow.sourcesSinks.definitions.ISourceSinkDefinitionProvider;
-import soot.jimple.infoflow.sourcesSinks.definitions.StatementSourceSinkDefinition;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
+import soot.options.Options;
 import soot.util.MultiMap;
 
 public class FlowDroidServerAnalysis implements ServerAnalysis {
@@ -52,12 +59,13 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
   private List<String> sinks;
   private List<String> entryPoints;
   private IEntryPointCreator entryPointCreator;
-  private String appClassPath="";
-  private String libPath="";
+  private String appClassPath = "";
+  private String libPath = "";
   private String configPath;
   private EasyTaintWrapper easyWrapper;
   private ExecutorService exeService;
   private Future<?> last;
+  private String appSourcePath = "";
 
   private boolean showRelated = true;
   private boolean debug = false;
@@ -133,32 +141,51 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
       Optional<IProjectService> opt = server.getProjectService("java");
       if (opt.isPresent()) {
         JavaProjectService ps = (JavaProjectService) server.getProjectService("java").get();
-        appClassPath= ps.getClassPath().toString();
-        for(Path p: ps.getLibraryPath()) {
-          libPath+=p.toAbsolutePath().toString()+ File.pathSeparator;
+        for (Path p : ps.getClassPath()) {
+          appClassPath += p.toAbsolutePath().toString() + File.pathSeparator;
         }
+        for (Path p : ps.getLibraryPath()) {
+          libPath += p.toAbsolutePath().toString() + File.pathSeparator;
+        }
+
         if (libPath.isEmpty()) {
-       
-          for(Path p: ps.getLibraryPath()) {
-            libPath+=p.toAbsolutePath().toString()+ File.pathSeparator;
+          for (Path p : ps.getLibraryPath()) {
+            libPath += p.toAbsolutePath().toString() + File.pathSeparator;
           }
-          libPath+= System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar";
         }
+
+        libPath +=
+            System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar";
       }
     }
   }
-
+  /**
+   * Set source path with the project service provided by the server.
+   *
+   * @param server
+   */
+  public void setSourcePath(MagpieServer server) {
+    MagpieServer s = (MagpieServer) server;
+    JavaProjectService ps = (JavaProjectService) s.getProjectService("java").get();
+    Set<Path> sourcePath = ps.getSourcePath();
+    if (!sourcePath.isEmpty()) {
+      appSourcePath = sourcePath.iterator().next().toString();
+    }
+  }
 
   public Collection<AnalysisResult> analyze(String appClassPath, String libPath) {
-    // LOG.info("entryPoints: " + entryPoints);
-    // LOG.info("srcPath: " + srcPath);
-    // LOG.info("libPath: " + libPath);
     loadSourceAndSinks();
     Infoflow infoflow = new Infoflow();
     infoflow.getConfig().setInspectSources(false);
     infoflow.getConfig().setInspectSinks(false);
     infoflow.getConfig().setLogSourcesAndSinks(debug);
     infoflow.getConfig().setWriteOutputFiles(debug);
+    infoflow.setSootConfig(
+        new IInfoflowConfig() {
+          public void setSootOptions(Options options, InfoflowConfiguration config) {
+            Options.v().set_keep_line_number(true);
+          }
+        });
     if (showRelated) {
       infoflow
           .getConfig()
@@ -166,27 +193,174 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
           .setPathReconstructionMode(PathReconstructionMode.Fast);
     }
     infoflow.setTaintWrapper(easyWrapper);
+
+    Collection<AnalysisResult> proResults = new HashSet<>();
+    infoflow.addResultsAvailableHandler(
+        new ResultsAvailableHandler() {
+
+          protected String getFileUrl(String className) throws MalformedURLException {
+            return appSourcePath + "/" + className + ".java";
+          }
+
+          protected String removeParameterPath(String parmetersOfMethod) {
+            String parameters[] = parmetersOfMethod.split(",");
+            String pathRemovedParameters = "";
+
+            for (int i = 0; i < parameters.length; i++) {
+              if (i != 0) {
+                pathRemovedParameters += ", ";
+              }
+
+              String parameterSplit[] = parameters[i].split("\\.");
+              pathRemovedParameters +=
+                  parameterSplit.length > 0
+                      ? parameterSplit[parameterSplit.length - 1]
+                      : parameters[i];
+            }
+
+            return pathRemovedParameters;
+          }
+
+          protected String getMethodName(String method) {
+            String firstParse[] = method.split("\\(");
+
+            if (firstParse.length > 0) {
+              String classRemovedMethod = removeParameterPath(firstParse[0]) + "(";
+              classRemovedMethod += removeParameterPath(firstParse[1]);
+              return classRemovedMethod;
+            }
+
+            return method;
+          }
+
+          protected Position makePostion(IInfoflowCFG cfg, Stmt info) {
+            SootMethod fileMethod = cfg.getMethodOf(info);
+            String fileUrl = null;
+            try {
+              fileUrl = getFileUrl(fileMethod.getDeclaringClass().toString());
+            } catch (MalformedURLException e) {
+              e.printStackTrace();
+            }
+
+            if (fileUrl == null) {
+              return null;
+            }
+
+            File javaFile = new File(fileUrl);
+
+            SourceCodeInfo codeInfo =
+                SourceCodePositionFinder.findCode(javaFile, info.getJavaSourceStartLineNumber());
+
+            if (codeInfo == null) {
+              return null;
+            }
+            Position codePostion = codeInfo.toPosition();
+            return new FlowCodePosition(
+                codePostion.getFirstLine(),
+                codePostion.getFirstCol(),
+                codePostion.getLastLine(),
+                codePostion.getLastCol(),
+                codePostion.getURL(),
+                getMethodName(fileMethod.getSubSignature()));
+          }
+
+          protected boolean equalPosition(Position first, Position second) {
+            if (first == null || second == null) {
+              if (first == second) return true;
+              return false;
+            }
+
+            if (first.getFirstCol() == second.getFirstCol()
+                && first.getFirstLine() == second.getFirstLine()
+                && first.getFirstCol() == second.getFirstCol()
+                && first.getLastCol() == second.getLastCol()) {
+              return true;
+            }
+
+            return false;
+          }
+
+          @Override
+          public void onResultsAvailable(IInfoflowCFG cfg, InfoflowResults results) {
+            MultiMap<ResultSinkInfo, ResultSourceInfo> res = results.getResults();
+            if (res != null) {
+              for (ResultSinkInfo sink : res.keySet()) {
+                List<Pair<Position, String>> relatedInfo = new ArrayList<>();
+                String sourceCode = null;
+                Position sourcePos = null;
+                ResultSourceInfo mainSource = null;
+                for (ResultSourceInfo source : res.get(sink)) {
+                  if (source.getPath() != null) {
+                    mainSource = source;
+                    Position previousPosition = null;
+                    for (Stmt pathElement : source.getPath()) {
+                      sourcePos = makePostion(cfg, pathElement);
+
+                      if (!equalPosition(sourcePos, previousPosition)) {
+                        /*System.out.println("Prv: " + previousPosition);
+                        System.out.println("Now: " + sourcePos);*/
+                        sourceCode = null;
+                        try {
+                          sourceCode = SourceCodeReader.getLinesInString(sourcePos);
+                        } catch (IOException e) {
+                          e.printStackTrace();
+                        }
+                        Pair<Position, String> pair = Pair.make(sourcePos, sourceCode);
+                        relatedInfo.add(pair);
+                        previousPosition = sourcePos;
+                      }
+                    }
+                  }
+                }
+
+                Position sinkPos = makePostion(cfg, sink.getStmt());
+                String sinkCode = null;
+                try {
+                  sinkCode = SourceCodeReader.getLinesInString(sinkPos);
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+
+                Position mainSourcePos = makePostion(cfg, mainSource.getStmt());
+                String mainSourceCode = null;
+                try {
+                  mainSourceCode = SourceCodeReader.getLinesInString(mainSourcePos);
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+
+                SootMethod fileMethod = cfg.getMethodOf(mainSource.getStmt());
+                String className = fileMethod.getDeclaringClass().toString();
+
+                String str =
+                    String.format(
+                        "Found a sensitive flow to sink [%s] from the source [%s] at line %d in %s",
+                        sinkCode.trim(),
+                        mainSourceCode.trim(),
+                        mainSourcePos.getFirstLine(),
+                        className);
+
+                AnalysisResult result =
+                    new FlowAnalysisResult(
+                        Kind.Diagnostic,
+                        sinkPos,
+                        str,
+                        relatedInfo,
+                        DiagnosticSeverity.Error,
+                        null,
+                        sinkCode);
+
+                proResults.add(result);
+              }
+            }
+          }
+        });
+
     infoflow.computeInfoflow(appClassPath, libPath, entryPointCreator, sources, sinks);
-    Collection<AnalysisResult> results = new HashSet<>();
-    MultiMap<ResultSinkInfo, ResultSourceInfo> res = infoflow.getResults().getResults();
-    if (res != null) {
-      int leaks = 0; 
-      for (ResultSinkInfo sink : res.keySet()) {
-        int sinkLineNo =  sink.getStmt().getJavaSourceStartLineNumber();
-        for (ResultSourceInfo source : res.get(sink)) {
-          int sourceLineNo = source.getStmt().getJavaSourceStartLineNumber();
-          leaks++;
-          // TODO write code convert to FlowDroidResult. 
-        }
-      }
-      System.err.println("Found "+leaks +" leaks.");
-      infoflow.getResults().printResults();
-    }
-
-    return results;
+    infoflow.getResults().printResults();
+    // System.err.println("Pro Result :" + proResults);
+    return proResults;
   }
-
-
 
   @Override
   public void analyze(Collection<? extends Module> files, AnalysisConsumer server, boolean rerun) {
@@ -199,13 +373,13 @@ public class FlowDroidServerAnalysis implements ServerAnalysis {
             new Runnable() {
               @Override
               public void run() {
-                setClassPath((MagpieServer)server);
+                setClassPath((MagpieServer) server);
+                setSourcePath((MagpieServer) server);
                 Collection<AnalysisResult> results = Collections.emptyList();
                 results = analyze(appClassPath, libPath);
                 server.consume(results, source());
               }
             });
     last = future;
-    
   }
 }

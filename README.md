@@ -18,7 +18,9 @@ This project demonstrates integrating FlowDroid into different IDEs with [Magpie
   - Import [DemoFlowDroid](https://github.com/MagpieBridge/FlowDroidLSPDemo/tree/master/src/test/resources/DemoFlowDroid) as Maven project in Eclipse.
   - Open a Java file in this project, this will trigger the server to run FlowDroid.
   - You should see a warning shown in Eclipse as in the following screenshot.      
-    <img src="screenshots/eclipse.png"  width="800">
+    <img src="screenshots/eclipse-error.PNG"  width="800">
+  - You can see in the previous screen shot there is a quick fix option with a view flow diagram link. If you click this link a data-flow visualization of the tainted flow will appear in your default browser similar to the following screenshot.
+  <img src="screenshots/data-flow-graph.PNG"  width="800">
 
 2. Run FlowDroidLSPDemo with this [demo Java Project](https://github.com/MagpieBridge/FlowDroidLSPDemo/tree/master/src/test/resources/DemoFlowDroid) in Visual Studio Code:
   - Navigate to `PATH_TO_LOCAL_REPO\flowdroid-lsp-demo\vscode`
